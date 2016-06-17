@@ -1,16 +1,9 @@
 package com.github.kaeluka.spencer;
 import com.github.kaeluka.spencer.server.TransformerServer;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Arrays;
-import java.util.List;
-import java.io.File;
-
-import org.apache.commons.io.IOUtils;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -22,11 +15,16 @@ public class Main {
             }
         }).start();
 
-        System.out.println("waiting for server to start");
-        Thread.currentThread().sleep(3000);
-        System.out.println("waiting for server to start: done");
+        //waiting for server to start
+        TransformerServer.awaitRunning();
 
+        final Process process = getProcess(args);
+        process.waitFor();
 
+        TransformerServer.tearDown();
+    }
+
+    private static Process getProcess(final String[] args) throws IOException {
         String sep = System.getProperty("file.separator");
         final String path = System.getProperty("java.home") + sep + "bin" + sep + "java";
         final String argString = StringUtils.join(Arrays.asList(args), " ");
@@ -45,9 +43,6 @@ public class Main {
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
 
-        final Process process = processBuilder.start();
-        process.waitFor();
-
-        TransformerServer.tearDown();
+        return processBuilder.start();
     }
 }
