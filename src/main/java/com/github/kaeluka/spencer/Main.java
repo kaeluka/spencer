@@ -42,7 +42,11 @@ public class Main {
         argStrings.add(path);
         argStrings.add("-Xbootclasspath/p"+cpPrepend);
         argStrings.add("-agentpath:"+System.getProperty("user.home")+("/.m2/repository/com/github/kaeluka/spencer-tracing-jni/0.1.2-SNAPSHOT/spencer-tracing-jni-0.1.2-SNAPSHOT.so=tracefile=/tmp/tracefile".replaceAll("/", sep)));
-        argStrings.addAll(Arrays.asList(args));
+
+        for (String arg : args) {
+            argStrings.addAll(Arrays.asList(arg.split(" ")));
+        }
+        //argStrings.addAll(Arrays.asList(args));
         ProcessBuilder processBuilder = new ProcessBuilder(
                 argStrings);
 
