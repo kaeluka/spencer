@@ -1,15 +1,5 @@
 #! /usr/bin/env bash
 
 readonly DIR=$(dirname $0)
-readonly CWD=$(pwd)
 
-#echo CWD=${CWD}
-#echo ${DIR}
-
-#AGENT=$(getSoPath | grep -v pom)
-
-#echo -e "AGENT is ${AGENT}"
-MAIN="-Dexec.mainClass=\"com.github.kaeluka.spencer.Main\""
-CMD="mvn --file ${DIR}/pom.xml exec:java ${MAIN} -Dexec.arguments=\"$@\""
-echo "${CMD}"
-/bin/bash -c "${CMD}"
+java -jar ${DIR}/target/spencer-*.jar $@
