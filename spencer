@@ -6,18 +6,6 @@ readonly CWD=$(pwd)
 #echo CWD=${CWD}
 #echo ${DIR}
 
-#function getSoPath() {
-#    local CP=$(mvn -file ${DIR} dependency:build-classpath | grep -v "^\[")
-#    local P
-#    for P in $(echo ${CP} | tr ":" " "); do
-#        if echo $P | grep spencer-tracing-jni; then
-#            P=$(echo ${P} | sed "s/\.pom/\.so/")
-#            echo "$P"
-#            return
-#        fi
-#    done
-#}
-
 #AGENT=$(getSoPath | grep -v pom)
 
 #echo -e "AGENT is ${AGENT}"

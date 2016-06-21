@@ -1,16 +1,46 @@
 package com.github.kaeluka.spencer;
 import com.github.kaeluka.spencer.server.TransformerServer;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.cli.*;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.net.URLClassLoader;
+import java.util.stream.Collectors;
 
 public class Main {
-    public static void main(String[] args) throws IOException, InterruptedException {
+
+    private static final Options spencerOptions = initSpencerOptions();
+
+    private static Options initSpencerOptions() {
+        final Options options = new Options();
+        options.addOption(
+                Option
+                        .builder("full")
+                        .desc("Instrument as many classes in the Java runtime as possible.")
+                        .build());
+        options.addOption(
+                Option
+                        .builder("verbose")
+                        .desc("Log output to stdout.")
+                        .build());
+
+        options.addOption(
+                Option
+                        .builder("help")
+                        .desc("Display this help.")
+                        .build());
+
+        return options;
+    }
+
+    public static void main(String[] _args) throws IOException, InterruptedException {
+        final ArrayList<String> args = tokenizeArgs(_args);
+        final CommandLine spencerArgs = parseSpencerArgs(popSpencerArgs(args));
+
         new Thread(() -> {
             try {
                 TransformerServer.main(new String[0]);
@@ -22,28 +52,105 @@ public class Main {
         //waiting for server to start
         TransformerServer.awaitRunning();
 
-        final Process process = getProcess(args);
+        final Process process = getProcess(args, spencerArgs.hasOption("full"));
         process.waitFor();
 
         TransformerServer.tearDown();
     }
 
-    private static Process getProcess(final String[] args) throws IOException {
+    private static List<String> popSpencerArgs(List<String> args) {
+        if (args.contains("--")) {
+            final ArrayList<String> ret = new ArrayList<>();
+            int i = 0;
+
+            for (String arg : args) {
+                i++;
+                if (arg.equals("--")) {
+                    break;
+                } else {
+                    ret.add(arg);
+                }
+            }
+
+            for ( ; i>0; --i) {
+                args.remove(0);
+            }
+
+            return ret;
+        } else {
+            final ArrayList<String> ret = new ArrayList<>(args);
+            args.clear();
+            return ret;
+        }
+    }
+
+    private static CommandLine parseSpencerArgs(List<String> spencerArgs) {
+        System.out.println("spencer args are: "+spencerArgs);
+        final DefaultParser defaultParser = new DefaultParser();
+        final CommandLine parsed;
+        try {
+            String[] args = Arrays.copyOf(spencerArgs.toArray(), spencerArgs.size(), String[].class);
+            parsed = defaultParser.parse(Main.spencerOptions, args);
+
+            if (parsed.hasOption("help")) {
+                printHelp();
+                System.exit(0);
+            }
+
+            return parsed;
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+//            Main.spencerOptions.
+            new HelpFormatter().printUsage(new PrintWriter(System.err), 0, "spencer", Main.spencerOptions);
+            //printHelp();
+            System.err.println("quitting");
+//            System.out.println(Main.spencerOptions.toString());
+            System.exit(1);
+            return null;
+        }
+
+    }
+
+    private static void printHelp() {
+        final HelpFormatter helpFormatter = new HelpFormatter();
+        helpFormatter.printHelp(
+                "spencer",
+                "A JVM with memory instrumentation.",
+                spencerOptions,
+                "stephan.brandauer@it.uu.se",
+                true);
+    }
+
+    private static Process getProcess(final ArrayList<String> jvmArgs, final boolean fullInstrumentation) throws IOException {
+
+//        jvmArgs = jvmArgs.stream()
+//                .filter(arg -> arg.replaceAll(" ", "").length() > 0)
+//                .collect(Collectors.toList());
+
         final String sep = System.getProperty("file.separator");
-        final String path = System.getProperty("java.home") + sep + "bin" + sep + "java";
-        final ArrayList<String> argStrings = new ArrayList();
-        final List<URL> urLs = Arrays.asList(((URLClassLoader) Main.class.getClassLoader()).getURLs());
-        System.out.println("class path: "+ urLs);
-        String cpPrepend =
-                // the native interface class:
-                ":"+System.getProperty("user.home")+("/.m2/repository/com/github/kaeluka/spencer-tracing-java/0.1.2-SNAPSHOT/spencer-tracing-java-0.1.2-SNAPSHOT.jar").replaceAll("/", sep)+
-                // the transformed runtim
-                ":"+System.getProperty("user.home")+("/.spencer/instrumented_java_rt/output".replaceAll("/", sep));
-        argStrings.add(path);
-        argStrings.add("-Xbootclasspath/p"+cpPrepend);
+
+        final ArrayList<String> argStrings = new ArrayList<>();
+
+        //executable:
+        argStrings.add(System.getProperty("java.home") + sep + "bin" + sep + "java");
+
+        if (fullInstrumentation) {
+            // the transformed runtime
+            argStrings.add("Xbootclasspath/p:"+System.getProperty("user.home")+("/.spencer/instrumented_java_rt/output".replaceAll("/", sep)));
+        }
+
+        //printClassPath();
+        //FIXME hard coded version numbers
+//        String cpPrepend =
+//                // the native interface class:
+//                ":"+).replaceAll("/", sep)+
+
+        final String nativeInterfaceLocation = System.getProperty("user.home") + ("/.m2/repository/com/github/kaeluka/spencer-tracing-java/0.1.2-SNAPSHOT/spencer-tracing-java-0.1.2-SNAPSHOT.jar").replaceAll("/", sep);
+        argStrings.add("-Xbootclasspath/p:" + nativeInterfaceLocation);
         argStrings.add("-agentpath:"+System.getProperty("user.home")+("/.m2/repository/com/github/kaeluka/spencer-tracing-jni/0.1.2-SNAPSHOT/spencer-tracing-jni-0.1.2-SNAPSHOT.so=tracefile=/tmp/tracefile".replaceAll("/", sep)));
 
-        for (String arg : args) {
+        for (String arg : jvmArgs) {
             argStrings.addAll(Arrays.asList(arg.split(" ")));
         }
         //argStrings.addAll(Arrays.asList(args));
@@ -57,5 +164,22 @@ public class Main {
         processBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
 
         return processBuilder.start();
+    }
+
+    private static ArrayList<String> tokenizeArgs(final String[] args) {
+        ArrayList<String> ret = new ArrayList<>();
+        for (String arg : args) {
+            final String[] split = arg.split(" ");
+            for (int i=0; i<split.length; ++i) {
+                split[i] = split[i].trim();
+            }
+            ret.addAll(Arrays.asList(split));
+        }
+        return ret;
+    }
+
+    private static void printClassPath() {
+        final List<URL> urLs = Arrays.asList(((URLClassLoader) Main.class.getClassLoader()).getURLs());
+        System.out.println("class path: "+ urLs);
     }
 }
