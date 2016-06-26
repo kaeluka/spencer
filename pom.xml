@@ -4,8 +4,41 @@
     <groupId>com.github.kaeluka</groupId>
     <artifactId>spencer</artifactId>
     <version>0.1.0-SNAPSHOT</version>
+
+    <!--properties>
+        <NativeIF.Loc>${com.github.kaeluka:spencer-tracing-java:jar}</NativeIF.Loc>
+    </properties-->
+
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>write-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <outputFile>src/main/resources/dependencies.properties</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -41,6 +74,12 @@
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>com.github.kaeluka</groupId>
+            <artifactId>spencer-tracing-java</artifactId>
+            <version>0.1.2-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
         <dependency>
             <groupId>com.github.kaeluka</groupId>
             <artifactId>spencer-tracing-jni</artifactId>

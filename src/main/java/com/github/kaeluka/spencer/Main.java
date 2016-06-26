@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.net.URLClassLoader;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -78,6 +79,7 @@ public class Main {
 
             return ret;
         } else {
+            System.out.println("all args ("+args+") go to spencer");
             final ArrayList<String> ret = new ArrayList<>(args);
             args.clear();
             return ret;
@@ -85,7 +87,7 @@ public class Main {
     }
 
     private static CommandLine parseSpencerArgs(List<String> spencerArgs) {
-        System.out.println("spencer args are: "+spencerArgs);
+//        System.out.println("spencer args are: "+spencerArgs);
         final DefaultParser defaultParser = new DefaultParser();
         final CommandLine parsed;
         try {
@@ -137,7 +139,7 @@ public class Main {
 
         if (fullInstrumentation) {
             // the transformed runtime
-            argStrings.add("Xbootclasspath/p:"+System.getProperty("user.home")+("/.spencer/instrumented_java_rt/output".replaceAll("/", sep)));
+            argStrings.add("-Xbootclasspath/p:" + System.getProperty("user.home") + ("/.spencer/instrumented_java_rt/output".replaceAll("/", sep)));
         }
 
         //printClassPath();
@@ -146,9 +148,18 @@ public class Main {
 //                // the native interface class:
 //                ":"+).replaceAll("/", sep)+
 
-        final String nativeInterfaceLocation = System.getProperty("user.home") + ("/.m2/repository/com/github/kaeluka/spencer-tracing-java/0.1.2-SNAPSHOT/spencer-tracing-java-0.1.2-SNAPSHOT.jar").replaceAll("/", sep);
+        System.out.println("cp is: "+System.getProperty("java.class.path"));
+        java.io.InputStream is = Main.class.getResourceAsStream("/dependencies.properties");
+        java.util.Properties p = new Properties();
+        p.load(is);
+        final String nativeInterfaceLocation = p.getProperty("com.github.kaeluka:spencer-tracing-java:jar");
+        System.out.println("com.github.kaeluka:spencer-tracing-java:jar = "+ nativeInterfaceLocation);
+
+
         argStrings.add("-Xbootclasspath/p:" + nativeInterfaceLocation);
-        argStrings.add("-agentpath:"+System.getProperty("user.home")+("/.m2/repository/com/github/kaeluka/spencer-tracing-jni/0.1.2-SNAPSHOT/spencer-tracing-jni-0.1.2-SNAPSHOT.so=tracefile=/tmp/tracefile".replaceAll("/", sep)));
+
+        final String tracingJni = p.getProperty("com.github.kaeluka:spencer-tracing-jni:pom").replace(".pom", ".so");
+        argStrings.add("-agentpath:" + tracingJni + "=tracefile=/tmp/tracefile");
 
         for (String arg : jvmArgs) {
             argStrings.addAll(Arrays.asList(arg.split(" ")));
@@ -157,7 +168,7 @@ public class Main {
         ProcessBuilder processBuilder = new ProcessBuilder(
                 argStrings);
 
-        System.out.println("running command: "+processBuilder.command());
+//        System.out.println("running command: "+processBuilder.command());
 
         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -167,12 +178,13 @@ public class Main {
     }
 
     private static ArrayList<String> tokenizeArgs(final String[] args) {
+//        System.out.println("tokenizing "+Arrays.asList(args));
         ArrayList<String> ret = new ArrayList<>();
         for (String arg : args) {
             final String[] split = arg.split(" ");
-            for (int i=0; i<split.length; ++i) {
-                split[i] = split[i].trim();
-            }
+//            for (int i=0; i<split.length; ++i) {
+//                split[i] = split[i].trim();
+//            }
             ret.addAll(Arrays.asList(split));
         }
         return ret;
