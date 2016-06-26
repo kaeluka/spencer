@@ -9,6 +9,33 @@
         <NativeIF.Loc>${com.github.kaeluka:spencer-tracing-java:jar}</NativeIF.Loc>
     </properties-->
 
+    <developers>
+        <developer>
+            <id>kaeluka</id>
+            <name>Stephan Brandauer</name>
+            <email>stephan.brandauer@gmail.com</email>
+            <url>http://stbr.me</url>
+            <organization>Uppsala University</organization>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:kaeluka/spencer-instrumentation.git</connection>
+        <developerConnection>scm:git:git@github.com:kaeluka/spencer-instrumentation.git</developerConnection>
+        <url>scm:git:git@github.com:kaeluka/spencer-instrumentation.git</url>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <plugins>
             <plugin>
@@ -107,7 +134,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>LATEST</version>
+            <version>3.4</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
